@@ -1,0 +1,25 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.13.35931.197 d17.13
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Sarashop", "Sarashop\Sarashop.csproj", "{E37DD772-F257-479C-ADCD-2D6D32A771ED}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{E37DD772-F257-479C-ADCD-2D6D32A771ED}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{E37DD772-F257-479C-ADCD-2D6D32A771ED}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{E37DD772-F257-479C-ADCD-2D6D32A771ED}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{E37DD772-F257-479C-ADCD-2D6D32A771ED}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {15D9AB49-EEEA-4D65-AA59-C247E2B17418}
+	EndGlobalSection
+EndGlobal
