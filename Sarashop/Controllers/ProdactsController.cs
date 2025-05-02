@@ -17,10 +17,10 @@ namespace Sarashop.Controllers
         }
 
         [HttpGet]
-        public IActionResult GetAll()
+        public IActionResult GetAll([FromQuery] string? query, [FromQuery] int page, [FromQuery] int limit = 10)
         {
-            var products = _prodactService.GetAll()
-                .Select(p => new ProdactRES
+            var products = _prodactService.GetAll(query, page, limit)
+                .Select(p => new ProdactDTO
                 {
                     Id = p.Id,
                     Name = p.Name,
@@ -32,7 +32,8 @@ namespace Sarashop.Controllers
                     State = p.State,
                     Rate = p.Rate,
                     CategoryId = p.CategoryId,
-                    BrandID = p.BrandID
+                    BrandID = p.BrandID,
+                    mainImg = p.mainImg,
                 });
 
             return Ok(products);
@@ -45,7 +46,7 @@ namespace Sarashop.Controllers
             if (product == null)
                 return NotFound();
 
-            var res = new ProdactRES
+            var res = new ProdactDTO
             {
                 Id = product.Id,
                 Name = product.Name,
@@ -64,10 +65,11 @@ namespace Sarashop.Controllers
         }
 
         [HttpPost]
-        public IActionResult Create([FromBody] ProdactDTO dto)
+        public IActionResult Create([FromForm] ProdactRES dto)
         {
             var file = dto.mainImg;
-            if (file == null && file.Length > 0)
+            string img = "";
+            if (file != null && file.Length > 0)
             {
                 var fileNmae = Guid.NewGuid().ToString() + Path.GetExtension(file.FileName);
                 var filePath = Path.Combine(Directory.GetCurrentDirectory(), "imgs", fileNmae);
@@ -75,6 +77,7 @@ namespace Sarashop.Controllers
                 {
                     file.CopyToAsync(stream);
                 }
+                img = fileNmae;
             }
             if (dto == null)
                 return BadRequest();
@@ -90,12 +93,14 @@ namespace Sarashop.Controllers
                 State = dto.State,
                 Rate = dto.Rate,
                 CategoryId = dto.CategoryId,
-                BrandID = dto.BrandID
+                BrandID = dto.BrandID,
+                mainImg = img,
+
             };
 
             var created = _prodactService.Add(newProduct);
 
-            return CreatedAtAction(nameof(GetById), new { id = created.Id }, new ProdactRES
+            return CreatedAtAction(nameof(GetById), new { id = created.Id }, new ProdactDTO
             {
                 Id = created.Id,
                 Name = created.Name,
@@ -107,12 +112,13 @@ namespace Sarashop.Controllers
                 State = created.State,
                 Rate = created.Rate,
                 CategoryId = created.CategoryId,
-                BrandID = created.BrandID
+                BrandID = created.BrandID,
+                mainImg = created.mainImg
             });
         }
 
         [HttpPut("{id}")]
-        public IActionResult Update(int id, [FromBody] ProdactDTO dto)
+        public IActionResult Update(int id, [FromBody] ProdactRES dto)
         {
             if (dto == null)
                 return BadRequest();

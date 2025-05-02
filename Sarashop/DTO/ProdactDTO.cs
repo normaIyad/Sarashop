@@ -2,6 +2,7 @@
 {
     public class ProdactDTO
     {
+        public int Id { get; set; }
         public string Name { get; set; }
         public string Description { get; set; }
         public string Type { get; set; }
@@ -12,6 +13,6 @@
         public double Rate { get; set; }
         public int CategoryId { get; set; }
         public int BrandID { get; set; }
-        public IFormFile mainImg { get; set; }
+        public string mainImg { get; set; }
     }
 }

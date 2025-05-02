@@ -18,40 +18,49 @@ namespace Sarashop.Controllers
         }
 
         [HttpGet]
-        public IActionResult GetAll()
+        public async Task<IActionResult> GetAll()
         {
-            var brands = _brandService.GetBrands(); // Rename method
-            return Ok(brands.Select(b => b.Adapt<BrandREQ>())); // or map manually
+            var brands = await _brandService.GetAsync();
+            return Ok(brands.ToList());
         }
 
         [HttpGet("{id}")]
-        public IActionResult GetById(int id)
+        public async Task<IActionResult> GetById(int id)
         {
-            var brand = _brandService.GetBrand(b => b.Id == id);
+            var brand = await _brandService.GetOne(b => b.Id == id);
             if (brand == null)
                 return NotFound();
 
-            return Ok(brand.Adapt<BrandREQ>());
+            return Ok(brand.Adapt<BrandDto>());
         }
 
         [HttpPost]
-        public IActionResult Create([FromBody] BrandDto brandDto)
+        public async Task<IActionResult> CreateAsync([FromForm] BrandREQ brandDto, CancellationToken cancellationToken)
         {
-            var file = brandDto.mainImg;
-            if (file == null && file.Length > 0)
-            {
-                var fileNmae = Guid.NewGuid().ToString() + Path.GetExtension(file.FileName);
-                var filePath = Path.Combine(Directory.GetCurrentDirectory(), "imgs", fileNmae);
-                using (var stream = System.IO.File.Create(filePath))
-                {
-                    file.CopyToAsync(stream);
-                }
-            }
+
             if (brandDto == null)
                 return BadRequest();
 
             var brand = brandDto.Adapt<Brand>();
-            var created = _brandService.Add(brand);
+            var file = brandDto.mainImg;
+            if (file != null && file.Length > 0)
+            {
+                var fileName = Guid.NewGuid().ToString() + Path.GetExtension(file.FileName);
+                var filePath = Path.Combine(Directory.GetCurrentDirectory(), "imgs", fileName);
+
+                // Ensure the directory exists
+                Directory.CreateDirectory(Path.GetDirectoryName(filePath));
+
+                using (var stream = System.IO.File.Create(filePath))
+                {
+                    await file.CopyToAsync(stream);
+                }
+
+                // Save the file name to the database
+                brand.mainImg = fileName;
+            }
+
+            var created = await _brandService.AddAsync(brand, cancellationToken);
 
             return CreatedAtAction(nameof(GetById), new { id = created.Id }, created);
         }
@@ -69,9 +78,9 @@ namespace Sarashop.Controllers
         }
 
         [HttpDelete("{id}")]
-        public IActionResult Delete(int id)
+        public async Task<IActionResult> Delete(int id)
         {
-            var result = _brandService.Delete(id);
+            var result = await _brandService.RemoveAsync(id);
             return result ? Ok() : NotFound();
         }
     }

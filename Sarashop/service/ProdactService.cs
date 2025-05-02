@@ -29,9 +29,21 @@ namespace Sarashop.service
             return true;
         }
 
-        IEnumerable<Prodact> IProdact.GetAll()
+        IEnumerable<Prodact> IProdact.GetAll(string query, int page, int limt)
         {
-            return database.Prodacts.ToList();
+            IQueryable<Prodact> prodacts = database.Prodacts;
+            if (query != null)
+            {
+                prodacts = prodacts.Where(prodact => prodact.Name.Contains(query) || prodact.Description.Contains(query));
+            }
+            if (page <= 0 || limt <= 0)
+            {
+                page = 1;
+                limt = 10;
+            }
+            prodacts = prodacts.Skip((page - 1) * limt).Take(limt);
+
+            return prodacts.ToList();
         }
 
         Prodact IProdact.GetProdact(Expression<Func<Prodact, bool>> expression)

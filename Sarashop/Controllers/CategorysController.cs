@@ -1,4 +1,6 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using Mapster;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
 using Sarashop.DTO;
 using Sarashop.Models;
 using Sarashop.service;
@@ -7,6 +9,7 @@ namespace Sarashop.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
+    [Authorize]
     public class CategoryController : ControllerBase
     {
         private readonly ICatigoryService _categoryService;
@@ -19,25 +22,16 @@ namespace Sarashop.Controllers
         [HttpGet]
         public IActionResult GetAll()
         {
-            var categories = _categoryService.GetCategories()
-                .Select(cat => new categoryRES
-                {
-                    ID = cat.Id,
-                    Name = cat.Name,
-                    Description = cat.Description,
-                    State = cat.State
-                });
-
-            return Ok(categories);
+            var categories = _categoryService.GetAsync();
+            return Ok(categories.Adapt<IEnumerable<Category>>());
         }
 
         [HttpGet("{id}")]
-        public IActionResult GetById(int id)
+        public async Task<IActionResult> GetById(int id)
         {
-            var category = _categoryService.GetCategory(c => c.Id == id);
+            var category = await _categoryService.GetOne(c => c.Id == id);
             if (category == null)
                 return NotFound();
-
             var response = new categoryRES
             {
                 ID = category.Id,
@@ -45,48 +39,39 @@ namespace Sarashop.Controllers
                 Description = category.Description,
                 State = category.State
             };
-
             return Ok(response);
         }
 
         [HttpPost]
-        public IActionResult Create([FromBody] CatigoryDTO categoryDto)
+        public async Task<IActionResult> CreateAsync([FromForm] CatigoryDTO categoryDto, CancellationToken cancellationToken)
         {
-            var file = categoryDto.mainImg;
-            if (file == null && file.Length > 0)
-            {
-                var fileNmae = Guid.NewGuid().ToString() + Path.GetExtension(file.FileName);
-                var filePath = Path.Combine(Directory.GetCurrentDirectory(), "imgs", fileNmae);
-                using (var stream = System.IO.File.Create(filePath))
-                {
-                    file.CopyToAsync(stream);
-                }
-            }
+
             if (categoryDto == null)
                 return BadRequest();
 
-            var newCategory = new Category
+            var catigory = categoryDto.Adapt<Category>();
+
+            var file = categoryDto.mainImg;
+            if (file != null && file.Length > 0)
             {
-                Name = categoryDto.Name,
-                Description = categoryDto.Description,
-                State = categoryDto.State
-            };
+                var fileName = Guid.NewGuid().ToString() + Path.GetExtension(file.FileName);
+                var filePath = Path.Combine(Directory.GetCurrentDirectory(), "imgs", fileName);
+                Directory.CreateDirectory(Path.GetDirectoryName(filePath));
 
-            var created = _categoryService.Add(newCategory);
+                using (var stream = System.IO.File.Create(filePath))
+                {
+                    await file.CopyToAsync(stream);
+                }
+                catigory.mainImg = fileName;
+            }
 
-            var response = new categoryRES
-            {
-                ID = created.Id,
-                Name = created.Name,
-                Description = created.Description,
-                State = created.State
-            };
+            var created = await _categoryService.AddAsync(catigory, cancellationToken);
 
-            return CreatedAtAction(nameof(GetById), new { id = created.Id }, response);
+            return CreatedAtAction(nameof(GetById), new { id = created.Id }, created);
         }
 
         [HttpPut("{id}")]
-        public IActionResult Update([FromRoute] int id, [FromBody] CatigoryDTO categoryDto)
+        public async Task<IActionResult> Update([FromRoute] int id, [FromForm] CatigoryDTO categoryDto)
         {
             if (categoryDto == null)
                 return BadRequest();
@@ -98,14 +83,14 @@ namespace Sarashop.Controllers
                 State = categoryDto.State
             };
 
-            var result = _categoryService.Update(id, updatedCategory);
+            var result = await _categoryService.Update(id, updatedCategory);
             return result ? Ok(categoryDto) : NotFound();
         }
 
         [HttpDelete("{id}")]
-        public IActionResult Delete([FromRoute] int id)
+        public async Task<IActionResult> Delete([FromRoute] int id)
         {
-            var result = _categoryService.Delete(id);
+            var result = await _categoryService.RemoveAsync(id);
             return result ? NoContent() : NotFound();
         }
     }
