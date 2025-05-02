@@ -1,16 +1,12 @@
 ﻿using Sarashop.Models;
-using System.Linq.Expressions;
+using Sarashop.service.IServices;
 
 namespace Sarashop.service
 {
-    public interface IBrand
+    public interface IBrand : IService<Brand>
     {
-        IEnumerable<Brand> GetBrands();
-        Brand GetBrand(Expression<Func<Brand, bool>> expression);
-        Brand Add(Brand brand);
         bool Update(int id, Brand brand);
-        bool Delete(int id);
-        IEnumerable<Brand> GetCategories();
+        bool state(int id, Brand brand);
     }
 }
 

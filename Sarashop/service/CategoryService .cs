@@ -1,59 +1,44 @@
 ﻿using Sarashop.DataBase;
 using Sarashop.Models;
 using Sarashop.service;
-using System.Linq.Expressions;
+using Sarashop.service.IServices;
 
 namespace Sarashop.Service
 {
-    public class CategoryService : ICatigoryService
+    //ICatigoryService
+    public class CategoryService : Service<Category>, ICatigoryService
     {
         private readonly DatabaseConfigration _databaseConfigration;
 
-        public CategoryService(DatabaseConfigration databaseConfigration)
+        public CategoryService(DatabaseConfigration databaseConfigration) : base(databaseConfigration)
         {
             _databaseConfigration = databaseConfigration;
         }
 
-        public Category Add(Category category)
+        async Task<bool> ICatigoryService.StatsChnage(int id, Category? category, CancellationToken cancellationToken)
         {
-            _databaseConfigration.Categories.Add(category);
-            _databaseConfigration.SaveChanges();
-            return category;
-        }
-
-        public bool Delete(int id)
-        {
-            var category = _databaseConfigration.Categories.Find(id);
-            if (category == null)
+            Category category1 = _databaseConfigration.Categories.Find(id);
+            if (category1 == null)
+            {
                 return false;
-
-            _databaseConfigration.Categories.Remove(category);
-            _databaseConfigration.SaveChanges();
+            }
+            category1.State = !category1.State;
+            await _databaseConfigration.SaveChangesAsync(cancellationToken);
             return true;
         }
 
-        public IEnumerable<Category> GetCategories()
+        async Task<bool> ICatigoryService.Update(int id, Category? category, CancellationToken cancellationToken = default)
         {
-            return _databaseConfigration.Categories.ToList();
-        }
-
-        public Category GetCategory(Expression<Func<Category, bool>> expression)
-        {
-            return _databaseConfigration.Categories.FirstOrDefault(expression);
-        }
-
-        public bool Update(int id, Category category)
-        {
-            var cat = _databaseConfigration.Categories.Find(id);
-            if (cat == null)
+            Category category1 = _databaseConfigration.Categories.Find(id);
+            if (category1 == null)
+            {
                 return false;
-
-            cat.Name = category.Name;
-            cat.Description = category.Description;
-            cat.State = category.State;
-
-            _databaseConfigration.SaveChanges();
+            }
+            category1.Name = category.Name;
+            category1.Description = category.Description;
+            await _databaseConfigration.SaveChangesAsync(cancellationToken);
             return true;
+
         }
     }
 }

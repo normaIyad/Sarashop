@@ -1,14 +1,12 @@
 ﻿using Sarashop.Models;
-using System.Linq.Expressions;
+using Sarashop.service.IServices;
 
 namespace Sarashop.service
 {
-    public interface ICatigoryService
+    public interface ICatigoryService : IService<Category>
     {
-        IEnumerable<Category> GetCategories();
-        Category GetCategory(Expression<Func<Category, bool>> expression);
-        Category Add(Category? category);
-        bool Update(int id, Category? category);
-        bool Delete(int id);
+        Task<bool> Update(int id, Category? category, CancellationToken cancellationToken = default);
+        Task<bool> StatsChnage(int id, Category? category, CancellationToken cancellationToken = default);
+
     }
 }
