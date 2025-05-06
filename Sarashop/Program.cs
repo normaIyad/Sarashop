@@ -1,6 +1,8 @@
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.UI.Services;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.IdentityModel.Tokens;
 using Sarashop.DataBase;
 using Sarashop.Models;
 using Sarashop.service;
@@ -8,12 +10,13 @@ using Sarashop.Service;
 using Sarashop.Utility;
 using Sarashop.Utility.DataBaseInitulizer;
 using Scalar.AspNetCore;
+using System.Text;
 
 namespace Sarashop
 {
     public class Program
     {
-        public static void Main(string[] args)
+        public static async Task Main(string[] args)
         {
             var builder = WebApplication.CreateBuilder(args);
 
@@ -42,7 +45,23 @@ namespace Sarashop
             builder.Services.AddScoped<IProdact, ProdactService>();
             builder.Services.AddScoped<ICatigoryService, CategoryService>();
             //builder.Services.AddScoped<ICart, CartServices>();
-            builder.Services.AddScoped<CartServices>();
+            var jwtSettings = builder.Configuration.GetSection("Jwt");
+
+            builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+           .AddJwtBearer(options =>
+           {
+               options.TokenValidationParameters = new TokenValidationParameters
+               {
+                   ValidateIssuer = false,
+                   ValidateAudience = false,
+                   ValidateLifetime = true,
+                   ValidateIssuerSigningKey = true,
+                   IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes("pX0BboXxx7FAAhJS8kfdiJJVJp7xkSAO"))
+               };
+           });
+
+
+            builder.Services.AddAuthorization();
             // Configure Identity
             builder.Services.AddIdentity<ApplecationUser, IdentityRole>(options =>
             {
@@ -78,12 +97,12 @@ namespace Sarashop
             app.UseHttpsRedirection();
             app.UseRouting();
             app.UseCors(MyAllowSpecificOrigins);
+            app.UseAuthentication();
             app.UseAuthorization();
-            app.MapControllers();
             var scope = app.Services.CreateScope();
             var service = scope.ServiceProvider.GetService<IDBInitalizer>();
-            service.IntalizeAsync();
-
+            await service.IntalizeAsync();
+            app.MapControllers();
             app.Run();
         }
     }

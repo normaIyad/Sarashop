@@ -7,6 +7,7 @@ using Sarashop.service;
 
 namespace Sarashop.Controllers
 {
+
     [Route("api/[controller]")]
     [ApiController]
     [Authorize]
@@ -20,9 +21,10 @@ namespace Sarashop.Controllers
         }
 
         [HttpGet]
-        public IActionResult GetAll()
+
+        public async Task<IActionResult> GetAll()
         {
-            var categories = _categoryService.GetAsync();
+            var categories = await _categoryService.GetAsync();
             return Ok(categories.Adapt<IEnumerable<Category>>());
         }
 
