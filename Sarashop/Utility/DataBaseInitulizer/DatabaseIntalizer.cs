@@ -19,12 +19,14 @@ namespace Sarashop.Utility.DataBaseInitulizer
             this.roleManager = roleManager;
             this.userManager = userManager;
         }
+
         public async Task IntalizeAsync()
         {
             try
             {
                 if ((await daatabase.Database.GetPendingMigrationsAsync()).Any())
                 {
+                    Console.WriteLine("Applying pending migrations...");
                     await daatabase.Database.MigrateAsync();
                 }
             }
@@ -33,48 +35,61 @@ namespace Sarashop.Utility.DataBaseInitulizer
                 Console.WriteLine($"Migration error: {ex.Message}");
             }
 
-            if (!roleManager.Roles.Any())
+            try
             {
-                await roleManager.CreateAsync(new IdentityRole("SuperAdmin"));
-                await roleManager.CreateAsync(new IdentityRole("Admin"));
-                await roleManager.CreateAsync(new IdentityRole("Customer"));
-                await roleManager.CreateAsync(new IdentityRole("Company"));
-            }
-
-            var user = await userManager.FindByEmailAsync("admin@gmail.com");
-            if (user == null)
-            {
-                var newUser = new ApplecationUser
+                if (!roleManager.Roles.Any())
                 {
-                    FirstName = "superadmin",
-                    LastName = "superadd",
-                    UserName = "superaddmin101",
-                    Gender = Gender.Male,
-                    BirthDate = new DateTime(1999, 8, 7),
-                    Email = "admin@gmail.com",
-                    EmailConfirmed = true // ⚠️ Add this line
-                };
+                    Console.WriteLine("Creating roles...");
 
-                var result = await userManager.CreateAsync(newUser, "admin@1");
-                if (result.Succeeded)
+                    await roleManager.CreateAsync(new IdentityRole(StaticData.SuperAdmin));
+                    await roleManager.CreateAsync(new IdentityRole(StaticData.Admin));
+                    await roleManager.CreateAsync(new IdentityRole(StaticData.Customer));
+                    await roleManager.CreateAsync(new IdentityRole(StaticData.Company));
+
+                    Console.WriteLine("Roles created successfully.");
+                }
+
+                var user = await userManager.FindByEmailAsync("admin@gmail.com");
+                if (user == null)
                 {
-                    await userManager.AddToRoleAsync(newUser, "SuperAdmin");
-                    Console.WriteLine("✅ SuperAdmin created and assigned.");
+                    Console.WriteLine("Creating SuperAdmin...");
+                    var newUser = new ApplecationUser
+                    {
+                        FirstName = "superadmin",
+                        LastName = "superadd",
+                        UserName = "superaddmin101",
+                        Gender = Gender.Male,
+                        BirthDate = new DateTime(1999, 8, 7),
+                        Email = "admin@gmail.com",
+                        EmailConfirmed = true
+                    };
+                    var result = await userManager.CreateAsync(newUser, "Admin@123");
+                    //var result = await userManager.CreateAsync(newUser, "admin@1");
+                    if (result.Succeeded)
+                    {
+                        await userManager.AddToRoleAsync(newUser, "SuperAdmin");
+                        Console.WriteLine("✅ SuperAdmin created and assigned.");
+                    }
+                    else
+                    {
+                        Console.WriteLine("❌ Failed to create SuperAdmin:");
+                        foreach (var error in result.Errors)
+                        {
+                            Console.WriteLine($" - {error.Description}");
+                        }
+                    }
                 }
                 else
                 {
-                    Console.WriteLine("❌ Failed to create SuperAdmin:");
-                    foreach (var error in result.Errors)
-                    {
-                        Console.WriteLine($" - {error.Description}");
-                    }
+                    Console.WriteLine("ℹ️ SuperAdmin already exists.");
                 }
             }
-            else
+            catch (Exception ex)
             {
-                Console.WriteLine("ℹ️ SuperAdmin already exists.");
+                Console.WriteLine($"Initialization error: {ex.Message}");
             }
         }
+
 
     }
 
