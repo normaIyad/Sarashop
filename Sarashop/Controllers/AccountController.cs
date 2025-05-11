@@ -50,13 +50,36 @@ namespace Sarashop.Controllers
             var result = await userManager.CreateAsync(applecationUser, regester.Password);
             if (result.Succeeded)
             {
+                await signInManager.SignInAsync(applecationUser, false);
                 await userManager.AddToRoleAsync(applecationUser, StaticData.Customer);
-                await emailSender.SendEmailAsync(applecationUser.Email, "welcone", $"<h1>Hello .... {applecationUser.UserName}</h1>");
+                var token = await userManager.GenerateEmailConfirmationTokenAsync(applecationUser);
+                var emailConf = Url.Action(nameof(ConfirmEmail), "Account", new { token, userId = applecationUser.Id }, Request.Scheme);
+                await emailSender.SendEmailAsync(applecationUser.Email, "Welcome",
+                    $"<h1>Hello {applecationUser.UserName}</h1><a href='{emailConf}'>Click here</a>");
+
                 return Ok("Done");
             }
 
             return BadRequest(result.Errors);
 
+        }
+        [HttpGet("ConfarmEmaile")]
+        public async Task<IActionResult> ConfirmEmail(string token, string userId)
+        {
+            var user = await userManager.FindByIdAsync(userId);
+            if (user != null)
+            {
+                var result = await userManager.ConfirmEmailAsync(user, token);
+                if (result.Succeeded)
+                {
+                    return Ok(new { massege = "welcome " });
+                }
+                else
+                {
+                    return BadRequest(result.Errors);
+                }
+            }
+            return NotFound();
         }
         [HttpPost("Login")]
         public async Task<IActionResult> Login([FromBody] LogINDTO login)
@@ -69,33 +92,29 @@ namespace Sarashop.Controllers
                 if (pass)
                 {
                     List<Claim> claims = new();
-                    claims.Add(new(ClaimTypes.Name, userData.UserName));
+                    claims.Add(new(JwtRegisteredClaimNames.Name, userData.UserName));
+                    claims.Add(new(JwtRegisteredClaimNames.Sub, userData.Id));
                     var rols = await userManager.GetRolesAsync(userData);
                     if (rols.Count > 0)
                     {
                         foreach (var role in rols)
                         {
-                            claims.Add(new(ClaimTypes.Role, role));
+                            claims.Add(new Claim(ClaimTypes.Role, role));
                         }
                     }
                     var signingKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes("pX0BboXxx7FAAhJS8kfdiJJVJp7xkSAO"));
-                    // SymmetricSecurityKey signingKry = new SymmetricSecurityKey(Encoding.UTF8.GetBytes("yefXhaguRFuj3CKuTkNFqt34Zq73DD2A"));
-                    SigningCredentials signingCredentials = new SigningCredentials(signingKey, SecurityAlgorithms.HmacSha256);
+                    var creds = new SigningCredentials(signingKey, SecurityAlgorithms.HmacSha256);
+                    //  SigningCredentials signingCredentials = new SigningCredentials(signingKey, SecurityAlgorithms.HmacSha256);
                     var jwtToken = new JwtSecurityToken(
                     claims: claims,
                     expires: DateTime.Now.AddMinutes(30),
-                    signingCredentials: signingCredentials
+                    signingCredentials: creds
                      );
                     string token = new JwtSecurityTokenHandler().WriteToken(jwtToken);
-                    return Ok(token);
-                    //in this line it will make a cockes 
-                    //await signInManager.SignInAsync(Emailres, login.RememberMe);
-
-
+                    return Ok(new { token });
                 }
             }
             return BadRequest(new { massage = "invaled Emaile or Password" });
-
         }
         [HttpGet("Logout")]
         public async Task<IActionResult> singout()
@@ -121,7 +140,6 @@ namespace Sarashop.Controllers
                     return BadRequest(result);
                 }
             }
-
             return BadRequest(new { masseg = "invaled data " });
         }
     }

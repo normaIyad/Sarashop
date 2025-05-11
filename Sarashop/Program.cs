@@ -1,4 +1,4 @@
-using Microsoft.AspNetCore.Authentication.JwtBearer;
+﻿using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.UI.Services;
 using Microsoft.EntityFrameworkCore;
@@ -37,7 +37,7 @@ namespace Sarashop
             builder.Services.AddOpenApi(); // Scalar open API
             builder.Services.AddEndpointsApiExplorer();
 
-            // Register custom services
+
             // DatabaseIntalizer : IDBInitalizer
             builder.Services.AddScoped<IDBInitalizer, DatabaseIntalizer>();
             builder.Services.AddTransient<IEmailSender, EmailSender>();
@@ -47,7 +47,11 @@ namespace Sarashop
             //builder.Services.AddScoped<ICart, CartServices>();
             var jwtSettings = builder.Configuration.GetSection("Jwt");
 
-            builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+            builder.Services.AddAuthentication(options =>
+            {
+                options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
+                options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+            })
            .AddJwtBearer(options =>
            {
                options.TokenValidationParameters = new TokenValidationParameters
