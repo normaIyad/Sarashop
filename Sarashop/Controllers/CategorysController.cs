@@ -1,5 +1,4 @@
 ﻿using Mapster;
-using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Sarashop.DTO;
 using Sarashop.Models;
@@ -10,7 +9,8 @@ namespace Sarashop.Controllers
 
     [Route("api/[controller]")]
     [ApiController]
-    [Authorize]
+
+
     public class CategoryController : ControllerBase
     {
         private readonly ICatigoryService _categoryService;

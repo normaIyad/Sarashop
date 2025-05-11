@@ -8,5 +8,6 @@ namespace Sarashop.service.IServices
         Task<T> GetOne(Expression<Func<T, bool>> expression, Expression<Func<T, object>>[] inclode = null, bool istrach = true);
         Task<T> AddAsync(T brand, CancellationToken cancellationToken = default);
         Task<bool> RemoveAsync(int id, CancellationToken cancellationToken = default);
+        Task<bool?> BlockUnBlock(string userID);
     }
 }

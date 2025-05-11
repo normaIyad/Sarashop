@@ -1,36 +1,32 @@
 ﻿using Mapster;
-using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Sarashop.DTO;
-using Sarashop.Models;
-using Sarashop.Utility.DataBaseInitulizer;
+using Sarashop.service;
 
 namespace Sarashop.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
-    [Authorize(Roles = StaticData.SuperAdmin)]
+    //[Authorize(Roles = StaticData.SuperAdmin)]
     public class UsersController : ControllerBase
     {
-        private readonly UserManager<ApplecationUser> userManager;
-
-        public UsersController(UserManager<ApplecationUser> userManager)
+        private readonly IUserService userService;
+        public UsersController(IUserService userService)
         {
-            this.userManager = userManager;
+            this.userService = userService;
         }
 
         [HttpGet("")]
         public IActionResult GetAll()
         {
-            var users = userManager.Users.ToList();
+            var users = userService.GetAsync();
             return Ok(users.Adapt<IEnumerable<UserDTO>>());
         }
 
         [HttpGet("{id}")]
         public async Task<IActionResult> Get(string id)
-        {
-            var user = await userManager.FindByIdAsync(id);
+        {//_brandService.GetOne(b => b.Id == id)
+            var user = await userService.GetOne(u => u.Id == id);
             if (user == null)
             {
                 return NotFound("User not found");
@@ -39,32 +35,32 @@ namespace Sarashop.Controllers
             return Ok(userDto);
         }
 
+
         [HttpPost("change-role")]
         public async Task<IActionResult> ChangeRole(string id, string roleName)
         {
-            var user = await userManager.FindByIdAsync(id);
-            if (user == null)
+            var result = await userService.ChangeRole(id, roleName);
+            if (result)
             {
-                return NotFound("User not found");
+                return Ok("Role updated successfully");
             }
-
-            var currentRoles = await userManager.GetRolesAsync(user);
-            foreach (var role in currentRoles)
-            {
-                var removeResult = await userManager.RemoveFromRoleAsync(user, role);
-                if (!removeResult.Succeeded)
-                {
-                    return BadRequest($"Failed to remove role {role}");
-                }
-            }
-
-            var addResult = await userManager.AddToRoleAsync(user, roleName);
-            if (!addResult.Succeeded)
-            {
-                return BadRequest($"Failed to add role {roleName}");
-            }
-
-            return Ok("Role updated successfully");
+            return BadRequest("Error in user data");
         }
+        [HttpPatch("blockUnblock/{userId}")]
+        public async Task<IActionResult> BlockUnBlock(string userId)
+        {
+            var result = await userService.BlockUnBlock(userId);
+            if (result.HasValue)
+            {
+                if (result.Value)
+                {
+                    return Ok("Changed block state successfully.");
+                }
+                return BadRequest("Failed operation.");
+            }
+
+            return NotFound("User not found.");
+        }
+
     }
 }
