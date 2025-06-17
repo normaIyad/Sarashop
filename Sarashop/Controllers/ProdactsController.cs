@@ -49,6 +49,7 @@ namespace Sarashop.Controllers
             var baseUrl = $"{Request.Scheme}://{Request.Host}/imgs/Prodact/";
             var res = new ProdactDTO
             {
+
                 Id = product.Id,
                 Name = product.Name,
                 Description = product.Description,
