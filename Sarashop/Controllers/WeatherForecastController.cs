@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace Sarashop.Controllers
 {
+    //[Authorize]
     [ApiController]
     [Route("[controller]")]
     public class WeatherForecastController : ControllerBase
@@ -18,6 +19,7 @@ namespace Sarashop.Controllers
         {
             _logger = logger;
         }
+
         [Authorize]
         [HttpGet(Name = "GetWeatherForecast")]
         public IEnumerable<WeatherForecast> Get()

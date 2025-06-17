@@ -1,4 +1,5 @@
 ﻿using Mapster;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Sarashop.DTO;
 using Sarashop.Models;
@@ -9,8 +10,7 @@ namespace Sarashop.Controllers
 
     [Route("api/[controller]")]
     [ApiController]
-
-
+    [Authorize]
     public class CategoryController : ControllerBase
     {
         private readonly ICatigoryService _categoryService;
@@ -25,7 +25,14 @@ namespace Sarashop.Controllers
         public async Task<IActionResult> GetAll()
         {
             var categories = await _categoryService.GetAsync();
-            return Ok(categories.Adapt<IEnumerable<Category>>());
+            var baseUrl = $"{Request.Scheme}://{Request.Host}/imgs/Category/";
+            var mapCatigory = categories.ToList().Select(e =>
+            {
+                var dto = e.Adapt<CategoryReq>();
+                dto.mainImg = baseUrl + e.mainImg;
+                return dto;
+            });
+            return Ok(mapCatigory);
         }
 
         [HttpGet("{id}")]
@@ -34,12 +41,14 @@ namespace Sarashop.Controllers
             var category = await _categoryService.GetOne(c => c.Id == id);
             if (category == null)
                 return NotFound();
-            var response = new categoryRES
+            var baseUrl = $"{Request.Scheme}://{Request.Host}/imgs/Category/";
+            var response = new CategoryReq
             {
-                ID = category.Id,
+                Id = category.Id,
                 Name = category.Name,
                 Description = category.Description,
-                State = category.State
+                State = category.State,
+                mainImg = baseUrl + category.mainImg,
             };
             return Ok(response);
         }
@@ -57,7 +66,7 @@ namespace Sarashop.Controllers
             if (file != null && file.Length > 0)
             {
                 var fileName = Guid.NewGuid().ToString() + Path.GetExtension(file.FileName);
-                var filePath = Path.Combine(Directory.GetCurrentDirectory(), "imgs", fileName);
+                var filePath = Path.Combine(Directory.GetCurrentDirectory(), "imgs/Category", fileName);
                 Directory.CreateDirectory(Path.GetDirectoryName(filePath));
 
                 using (var stream = System.IO.File.Create(filePath))

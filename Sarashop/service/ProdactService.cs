@@ -42,7 +42,6 @@ namespace Sarashop.service
                 limt = 10;
             }
             prodacts = prodacts.Skip((page - 1) * limt).Take(limt);
-
             return prodacts.ToList();
         }
 

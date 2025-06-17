@@ -20,8 +20,17 @@ namespace Sarashop.Controllers
         [HttpGet]
         public async Task<IActionResult> GetAll()
         {
+
+            var baseUrl = $"{Request.Scheme}://{Request.Host}/imgs/Brand/";
             var brands = await _brandService.GetAsync();
-            return Ok(brands.ToList());
+            var mapBrand = brands.ToList().Select(b =>
+            {
+                var dto = b.Adapt<BrandDto>();
+                dto.mainImg = baseUrl + b.mainImg;
+                return dto;
+            });
+
+            return Ok(mapBrand);
         }
 
         [HttpGet("{id}")]
@@ -30,8 +39,10 @@ namespace Sarashop.Controllers
             var brand = await _brandService.GetOne(b => b.Id == id);
             if (brand == null)
                 return NotFound();
-
-            return Ok(brand.Adapt<BrandDto>());
+            var baseUrl = $"{Request.Scheme}://{Request.Host}/imgs/Brand/";
+            var brandmap = brand.Adapt<BrandDto>();
+            brandmap.mainImg = baseUrl + brand.mainImg;
+            return Ok(brandmap);
         }
 
         [HttpPost]
@@ -46,7 +57,7 @@ namespace Sarashop.Controllers
             if (file != null && file.Length > 0)
             {
                 var fileName = Guid.NewGuid().ToString() + Path.GetExtension(file.FileName);
-                var filePath = Path.Combine(Directory.GetCurrentDirectory(), "imgs", fileName);
+                var filePath = Path.Combine(Directory.GetCurrentDirectory(), "imgs/Brand", fileName);
 
                 // Ensure the directory exists
                 Directory.CreateDirectory(Path.GetDirectoryName(filePath));

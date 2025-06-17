@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Sarashop.DataBase;
 
@@ -11,9 +12,11 @@ using Sarashop.DataBase;
 namespace Sarashop.Migrations
 {
     [DbContext(typeof(DatabaseConfigration))]
-    partial class DatabaseConfigrationModelSnapshot : ModelSnapshot
+    [Migration("20250609123450_Order")]
+    partial class Order
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -365,46 +368,23 @@ namespace Sarashop.Migrations
                     b.Property<int>("OrderId")
                         .HasColumnType("int");
 
-                    b.Property<int>("ProdactId")
+                    b.Property<int>("ProductId")
                         .HasColumnType("int");
 
                     b.Property<string>("Note")
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<int>("ProdactId")
+                        .HasColumnType("int");
+
                     b.Property<decimal>("TotalPrice")
                         .HasColumnType("decimal(18,2)");
 
-                    b.HasKey("OrderId", "ProdactId");
+                    b.HasKey("OrderId", "ProductId");
 
                     b.HasIndex("ProdactId");
 
                     b.ToTable("OrdersItems");
-                });
-
-            modelBuilder.Entity("Sarashop.Models.PasswordResetCode", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<string>("Code")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<DateTime>("ExprationCode")
-                        .HasColumnType("datetime2");
-
-                    b.Property<string>("applecationUserId")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(450)");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("applecationUserId");
-
-                    b.ToTable("passwordResetCodes");
                 });
 
             modelBuilder.Entity("Sarashop.Models.Prodact", b =>
@@ -461,61 +441,6 @@ namespace Sarashop.Migrations
                     b.HasIndex("CategoryId");
 
                     b.ToTable("Prodacts");
-                });
-
-            modelBuilder.Entity("Sarashop.Models.Review", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<string>("ApplecationUserID")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(450)");
-
-                    b.Property<string>("Comment")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<int>("ProdactId")
-                        .HasColumnType("int");
-
-                    b.Property<int>("Rate")
-                        .HasColumnType("int");
-
-                    b.Property<DateTime?>("ReviewDate")
-                        .HasColumnType("datetime2");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("ApplecationUserID");
-
-                    b.HasIndex("ProdactId");
-
-                    b.ToTable("Reviews");
-                });
-
-            modelBuilder.Entity("Sarashop.Models.ReviewImgs", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<string>("Image")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<int>("ReviewId")
-                        .HasColumnType("int");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("ReviewId");
-
-                    b.ToTable("ReviewsImgs");
                 });
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRoleClaim<string>", b =>
@@ -618,17 +543,6 @@ namespace Sarashop.Migrations
                     b.Navigation("Prodact");
                 });
 
-            modelBuilder.Entity("Sarashop.Models.PasswordResetCode", b =>
-                {
-                    b.HasOne("Sarashop.Models.ApplecationUser", "applecationUser")
-                        .WithMany()
-                        .HasForeignKey("applecationUserId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("applecationUser");
-                });
-
             modelBuilder.Entity("Sarashop.Models.Prodact", b =>
                 {
                     b.HasOne("Sarashop.Models.Brand", "Brand")
@@ -648,36 +562,6 @@ namespace Sarashop.Migrations
                     b.Navigation("Category");
                 });
 
-            modelBuilder.Entity("Sarashop.Models.Review", b =>
-                {
-                    b.HasOne("Sarashop.Models.ApplecationUser", "ApplecationUser")
-                        .WithMany()
-                        .HasForeignKey("ApplecationUserID")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("Sarashop.Models.Prodact", "Prodact")
-                        .WithMany()
-                        .HasForeignKey("ProdactId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("ApplecationUser");
-
-                    b.Navigation("Prodact");
-                });
-
-            modelBuilder.Entity("Sarashop.Models.ReviewImgs", b =>
-                {
-                    b.HasOne("Sarashop.Models.Review", "Review")
-                        .WithMany("ReviewImgs")
-                        .HasForeignKey("ReviewId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Review");
-                });
-
             modelBuilder.Entity("Sarashop.Models.Brand", b =>
                 {
                     b.Navigation("Prodacts");
@@ -686,11 +570,6 @@ namespace Sarashop.Migrations
             modelBuilder.Entity("Sarashop.Models.Category", b =>
                 {
                     b.Navigation("Prodacts");
-                });
-
-            modelBuilder.Entity("Sarashop.Models.Review", b =>
-                {
-                    b.Navigation("ReviewImgs");
                 });
 #pragma warning restore 612, 618
         }

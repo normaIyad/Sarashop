@@ -1,4 +1,5 @@
 ﻿using Mapster;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Sarashop.DTO;
 using Sarashop.service;
@@ -7,6 +8,7 @@ namespace Sarashop.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
+    [Authorize]
     //[Authorize(Roles = StaticData.SuperAdmin)]
     public class UsersController : ControllerBase
     {

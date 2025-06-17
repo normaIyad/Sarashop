@@ -16,7 +16,7 @@ namespace Sarashop.service.IServices
         public async Task<T> AddAsync(T entity, CancellationToken cancellationToken = default)
         {
             await _databaseConfigration.AddAsync(entity, cancellationToken);
-            await _databaseConfigration.SaveChangesAsync();
+            await _databaseConfigration.SaveChangesAsync(cancellationToken);
             return entity;
         }
 
@@ -57,6 +57,15 @@ namespace Sarashop.service.IServices
             _dbSet.Remove(entity);
             await _databaseConfigration.SaveChangesAsync(cancellationToken);
             return true;
+        }
+
+        public Task<bool?> BlockUnBlock(string userID)
+        {
+            throw new NotImplementedException();
+        }
+        public async Task<int> commitAsync(CancellationToken cancellationToken = default)
+        {
+            return await _databaseConfigration.SaveChangesAsync(cancellationToken);
         }
     }
 }

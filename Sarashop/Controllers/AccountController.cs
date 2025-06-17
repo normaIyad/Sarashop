@@ -6,6 +6,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.IdentityModel.Tokens;
 using Sarashop.DTO;
 using Sarashop.Models;
+using Sarashop.service;
 using Sarashop.Utility.DataBaseInitulizer;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
@@ -22,15 +23,17 @@ namespace Sarashop.Controllers
         private readonly SignInManager<ApplecationUser> signInManager;
         private readonly IEmailSender emailSender;
         private readonly RoleManager<IdentityRole> roleManager;
+        private readonly IPasswordResetCodeService passwordResetCode;
 
         public AccountController(UserManager<ApplecationUser> userManager, SignInManager<ApplecationUser> signInManager, IEmailSender emailSender,
-            RoleManager<IdentityRole> roleManager
+            RoleManager<IdentityRole> roleManager, IPasswordResetCodeService passwordResetCode
             )
         {
             this.userManager = userManager;
             this.signInManager = signInManager;
             this.emailSender = emailSender;
             this.roleManager = roleManager;
+            this.passwordResetCode = passwordResetCode;
         }
         [HttpPost("register")]
         public async Task<IActionResult> Regester([FromBody] RegesterDTO regester)
@@ -84,38 +87,42 @@ namespace Sarashop.Controllers
         [HttpPost("Login")]
         public async Task<IActionResult> Login([FromBody] LogINDTO login)
         {
+            var user = await userManager.FindByEmailAsync(login.Email);
+            if (user == null || !await userManager.CheckPasswordAsync(user, login.Password))
+                return BadRequest(new { message = "Invalid email or password" });
 
-            var userData = await userManager.FindByEmailAsync(login.Email);
-            if (userData != null)
+            if (!await userManager.IsEmailConfirmedAsync(user))
+                return BadRequest(new { message = "Email not confirmed" });
+            //IsLockedOut
+            if (await userManager.IsLockedOutAsync(user))
             {
-                var pass = await userManager.CheckPasswordAsync(userData, login.Password);
-                if (pass)
-                {
-                    List<Claim> claims = new();
-                    claims.Add(new(JwtRegisteredClaimNames.Name, userData.UserName));
-                    claims.Add(new(JwtRegisteredClaimNames.Sub, userData.Id));
-                    var rols = await userManager.GetRolesAsync(userData);
-                    if (rols.Count > 0)
-                    {
-                        foreach (var role in rols)
-                        {
-                            claims.Add(new Claim(ClaimTypes.Role, role));
-                        }
-                    }
-                    var signingKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes("pX0BboXxx7FAAhJS8kfdiJJVJp7xkSAO"));
-                    var creds = new SigningCredentials(signingKey, SecurityAlgorithms.HmacSha256);
-                    //  SigningCredentials signingCredentials = new SigningCredentials(signingKey, SecurityAlgorithms.HmacSha256);
-                    var jwtToken = new JwtSecurityToken(
-                    claims: claims,
-                    expires: DateTime.Now.AddMinutes(30),
-                    signingCredentials: creds
-                     );
-                    string token = new JwtSecurityTokenHandler().WriteToken(jwtToken);
-                    return Ok(new { token });
-                }
+                return BadRequest("Your account is temporarily locked. Try again later.");
             }
-            return BadRequest(new { massage = "invaled Emaile or Password" });
+
+            var claims = new List<Claim>
+            {
+                 new(JwtRegisteredClaimNames.Name, user.UserName),
+               new(JwtRegisteredClaimNames.Email, user.Email)
+            };
+
+            var roles = await userManager.GetRolesAsync(user);
+            var id = await userManager.GetUserIdAsync(user);
+            claims.AddRange(roles.Select(role => new Claim(ClaimTypes.Role, role)));
+            claims.Add(new Claim(ClaimTypes.NameIdentifier, id));
+            var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes("pX0BboXxx7FAAhJS8kfdiJJVJp7xkSAO"));
+            var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
+
+            var token = new JwtSecurityToken(
+               issuer: "yourdomain.com",
+               audience: "yourdomain.com",
+               claims: claims,
+               expires: DateTime.UtcNow.AddMinutes(30),
+               signingCredentials: creds
+            );
+
+            return Ok(new { token = new JwtSecurityTokenHandler().WriteToken(token) });
         }
+
         [HttpGet("Logout")]
         public async Task<IActionResult> singout()
         {
@@ -142,5 +149,66 @@ namespace Sarashop.Controllers
             }
             return BadRequest(new { masseg = "invaled data " });
         }
+
+        [HttpPost("forgetPassword")]
+        public async Task<IActionResult> forgetPassword([FromBody] ForgetPassword Request)
+        {
+            var user = await userManager.FindByEmailAsync(Request.Email);
+            if (user is not null)
+            {
+                var code = new Random().Next(1000, 9999).ToString();
+                await passwordResetCode.AddAsync(new()
+                {
+                    applecationUserId = user.Id,
+                    Code = code,
+                    ExprationCode = DateTime.Now.AddMinutes(30),
+                });
+                await emailSender.SendEmailAsync(user.Email, "forget password",
+                   $"<h1>Dar : {user.UserName}</h1>" +
+                   $"<h3>you wont to change your password  this is a code for change it </h3>" +
+                   $"<h2>{code}</h2>");
+                return Ok(new { massege = "code send to your email" });
+            }
+            else
+            {
+                return BadRequest(new { massege = "not found Emale" });
+            }
+
+        }
+        [HttpPost("ChangePasswordPyCode")]
+        public async Task<IActionResult> CheckCode(SendCodeReq request)
+        {
+            var user = await userManager.FindByEmailAsync(request.Email);
+            if (user is not null)
+            {
+                var res = (await passwordResetCode.GetAsync(e => e.applecationUserId == user.Id))
+                      .OrderByDescending(e => e.ExprationCode).FirstOrDefault();
+                if (res is not null && res.Code == request.Code && res.ExprationCode >= DateTime.Now)
+                {
+                    var token = await userManager.GeneratePasswordResetTokenAsync(user);
+                    var result = await userManager.ResetPasswordAsync(user, token, request.Password);
+                    if (result.Succeeded)
+                    {
+                        await emailSender.SendEmailAsync(user.Email, "change password", $"<h2>Dear {user.FirstName}<h2>" +
+                            $"<h4>your password have been changed successfully</h4>"
+                            );
+                        await passwordResetCode.RemoveAsync(res.Id);
+                        return Ok(new { massege = "Pasword has been change " });
+                    }
+                    else
+                    {
+                        return BadRequest(result.Errors);
+                    }
+                }
+                else
+                {
+                    return BadRequest(new { massege = "invaled code" });
+                }
+            }
+            return BadRequest(new { massege = "not valled emisle" });
+
+        }
+
     }
+
 }

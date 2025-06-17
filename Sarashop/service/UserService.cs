@@ -25,11 +25,13 @@ namespace Sarashop.service
             var isBlock = user.LockoutEnabled && user.LockoutEnd > DateTime.Now;
             if (isBlock)
             {
+                //check if user is block then remove block 
                 user.LockoutEnabled = false;
                 user.LockoutEnd = null;
             }
             else
             {
+                //add block for 20 min
                 user.LockoutEnabled = true;
                 user.LockoutEnd = DateTime.Now.AddMinutes(20);
             }

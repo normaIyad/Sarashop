@@ -36,6 +36,10 @@ namespace Sarashop.DataBase
         public DbSet<Category> Categories { get; set; }
         public DbSet<Brand> Brands { get; set; }
         public DbSet<Cart> Carts { get; set; }
-
+        public DbSet<Order> Orders { get; set; }
+        public DbSet<OrderItem> OrdersItems { get; set; }
+        public DbSet<PasswordResetCode> passwordResetCodes { get; set; }
+        public DbSet<Review> Reviews { get; set; }
+        public DbSet<ReviewImgs> ReviewsImgs { get; set; }
     }
 }

@@ -19,23 +19,24 @@ namespace Sarashop.Controllers
         [HttpGet]
         public IActionResult GetAll([FromQuery] string? query, [FromQuery] int page, [FromQuery] int limit = 10)
         {
-            var products = _prodactService.GetAll(query, page, limit)
-                .Select(p => new ProdactDTO
-                {
-                    Id = p.Id,
-                    Name = p.Name,
-                    Description = p.Description,
-                    Type = p.Type,
-                    Price = p.Price,
-                    Discount = p.Discount,
-                    Quntity = p.Quntity,
-                    State = p.State,
-                    Rate = p.Rate,
-                    CategoryId = p.CategoryId,
-                    BrandID = p.BrandID,
-                    mainImg = p.mainImg,
-                });
 
+            var baseUrl = $"{Request.Scheme}://{Request.Host}/imgs/Prodact/";
+            var products = _prodactService.GetAll(query, page, limit)
+               .Select(p => new ProdactDTO
+               {
+                   Id = p.Id,
+                   Name = p.Name,
+                   Description = p.Description,
+                   Type = p.Type,
+                   Price = p.Price,
+                   Discount = p.Discount,
+                   Quntity = p.Quntity,
+                   State = p.State,
+                   Rate = p.Rate,
+                   CategoryId = p.CategoryId,
+                   BrandID = p.BrandID,
+                   mainImg = baseUrl + p.mainImg,
+               });
             return Ok(products);
         }
 
@@ -45,7 +46,7 @@ namespace Sarashop.Controllers
             var product = _prodactService.GetProdact(p => p.Id == id);
             if (product == null)
                 return NotFound();
-
+            var baseUrl = $"{Request.Scheme}://{Request.Host}/imgs/Prodact/";
             var res = new ProdactDTO
             {
                 Id = product.Id,
@@ -58,7 +59,8 @@ namespace Sarashop.Controllers
                 State = product.State,
                 Rate = product.Rate,
                 CategoryId = product.CategoryId,
-                BrandID = product.BrandID
+                BrandID = product.BrandID,
+                mainImg = baseUrl + product.mainImg,
             };
 
             return Ok(res);
@@ -72,7 +74,7 @@ namespace Sarashop.Controllers
             if (file != null && file.Length > 0)
             {
                 var fileNmae = Guid.NewGuid().ToString() + Path.GetExtension(file.FileName);
-                var filePath = Path.Combine(Directory.GetCurrentDirectory(), "imgs", fileNmae);
+                var filePath = Path.Combine(Directory.GetCurrentDirectory(), "imgs/Prodact/", fileNmae);
                 using (var stream = System.IO.File.Create(filePath))
                 {
                     file.CopyToAsync(stream);
@@ -118,7 +120,7 @@ namespace Sarashop.Controllers
         }
 
         [HttpPut("{id}")]
-        public IActionResult Update(int id, [FromBody] ProdactRES dto)
+        public IActionResult Update(int id, [FromForm] ProdactRES dto)
         {
             if (dto == null)
                 return BadRequest();

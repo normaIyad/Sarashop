@@ -1,4 +1,6 @@
-﻿namespace Sarashop.Models
+﻿using System.ComponentModel.DataAnnotations.Schema;
+
+namespace Sarashop.Models
 {
     public class Prodact
     {
@@ -7,6 +9,7 @@
         public string Description { get; set; }
         public string Type { get; set; }
         public decimal Price { get; set; }
+        [Column(TypeName = "decimal(18,2)")]
         public decimal Discount { get; set; }
         public double Quntity { get; set; }
         public bool State { get; set; }
